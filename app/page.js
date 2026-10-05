@@ -6,6 +6,7 @@ const ALIAS = {
   item_code: ["itemcode", "item", "code", "kodeitem", "kodebarang"],
   qty: ["qty", "quantity", "jumlah"],
   rate: ["rate", "harga", "hargabeli"],
+  description: ["description", "deskripsi", "keterangan", "desc"],
 };
 const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
 const fmt = (n) => Number(n).toLocaleString("id-ID", { maximumFractionDigits: 3 });
@@ -79,14 +80,14 @@ export default function Page() {
     const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
     const keys = Object.keys(raw[0] || {});
     const pick = (f) => keys.find((k) => ALIAS[f].includes(norm(k)));
-    const [kc, kq, kr] = [pick("item_code"), pick("qty"), pick("rate")];
+    const [kc, kq, kr, kd] = [pick("item_code"), pick("qty"), pick("rate"), pick("description")];
     if (!kc || !kq || !kr) {
       setRows([]);
       return setErr("Kolom wajib: Item Code, Qty, Rate.");
     }
     setRows(
       raw
-        .map((r) => ({ item_code: String(r[kc]).trim(), qty: num(r[kq]), rate: num(r[kr]) }))
+        .map((r) => ({ item_code: String(r[kc]).trim(), qty: num(r[kq]), rate: num(r[kr]), description: kd ? String(r[kd] ?? "").trim() : "" }))
         .filter((r) => r.item_code && r.qty > 0)
     );
   }
@@ -95,7 +96,7 @@ export default function Page() {
   const check = () => run(async () => setPreview(await call("preview", { company, items: rows })));
   const create = () =>
     run(async () => {
-      if (!confirm("Buat dan submit Purchase Order?")) return;
+      if (!confirm("Buat Purchase Order (draft)? Description item akan ikut diperbarui.")) return;
       setDone(await call("create", { supplier, company, items: rows }));
       setPreview(null);
     });
@@ -106,6 +107,7 @@ export default function Page() {
   return (
     <main>
       <h1>Purchase Import</h1>
+      <p className="sub"><a href="/receipt">Ke Purchase Receipt →</a></p>
       <p className="sub">Upload Excel, qty dialokasikan ke Material Request aktif, sisanya jadi pembelian stock.</p>
 
       <section>
@@ -125,7 +127,7 @@ export default function Page() {
           </div>
         </div>
         <div style={{ marginTop: 16 }}>
-          <label htmlFor="fi">File Excel / CSV (Item Code, Qty, Rate)</label>
+          <label htmlFor="fi">File Excel / CSV (Item Code, Qty, Rate, Description)</label>
           <input id="fi" type="file" accept=".xlsx,.xls,.csv" onChange={(e) => onFile(e.target.files[0])} />
           <p className="sub" style={{ margin: "6px 0 0" }}>
             {fileName && `${fileName}: ${rows.length} baris. `}
@@ -139,7 +141,8 @@ export default function Page() {
         {err && <div className="msg err" role="alert">{err}</div>}
         {done && (
           <div className="msg ok">
-            Purchase Order <a href={done.url} target="_blank" rel="noreferrer">{done.name}</a> dibuat dan disubmit.
+            Purchase Order <a href={done.url} target="_blank" rel="noreferrer">{done.name}</a> dibuat (draft).
+            {done.descErrors?.length > 0 && <div>Description gagal diubah: {done.descErrors.join("; ")}</div>}
           </div>
         )}
       </section>

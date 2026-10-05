@@ -10,3 +10,6 @@ Tanpa custom app Frappe. Hanya memakai REST standar ERPNext.
 - Salin `.env.example` ke `.env.local`, isi nilai asli. File `.env*` di-ignore git (kecuali `.env.example`).
 - Di Vercel: isi via Settings > Environment Variables.
 - Jangan pernah commit key/secret.
+
+## Purchase Receipt
+Halaman `/receipt`: input nomor PO (harus sudah submit) + Excel (Item Code, Qty). Alokasi: MR teratas yang muat penuh, sisa ke stock, jika stock habis ke MR teratas.
