@@ -10,6 +10,23 @@ const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jak
 // Required By tidak boleh lebih awal dari tanggal PO
 const clamp = (d, min) => (!d || d < min ? min : d);
 
+const SELLING_LIST = process.env.SELLING_PRICE_LIST || "Grosir";
+const SELLING_FIELD = process.env.PO_SELLING_FIELD || "price_list_rate_selling";
+
+// harga jual price list Grosir yang berlaku pada tanggal PO
+async function sellingPrices(codes, date) {
+  const rows = await getList("Item Price", {
+    fields: ["item_code", "price_list_rate", "valid_from", "valid_upto", "uom", "creation"],
+    filters: [["item_code", "in", codes], ["selling", "=", 1], ["price_list", "=", SELLING_LIST]],
+  });
+  const map = {};
+  rows
+    .filter((r) => (!r.valid_from || r.valid_from <= date) && (!r.valid_upto || r.valid_upto >= date))
+    .sort((a, b) => (b.valid_from || "").localeCompare(a.valid_from || "") || (b.creation || "").localeCompare(a.creation || ""))
+    .forEach((r) => (map[r.item_code] ||= []).push(r));
+  return map;
+}
+
 // ubah description Item master hanya jika berbeda
 async function updateDescriptions(desc) {
   const codes = Object.keys(desc);
@@ -58,6 +75,7 @@ const handlers = {
       // hitung ulang: jangan pakai hasil preview lama
       const { lines, summary } = await allocate(rows, company);
       const trx = today();
+      const prices = await sellingPrices([...new Set(lines.map((l) => l.item_code))], trx);
       const dates = lines.map((l) => clamp(l.schedule_date, trx)).sort();
       const schedule = dates[0] || trx;
       const doc = await erp("frappe.client.insert", {
@@ -71,6 +89,9 @@ const handlers = {
           items: lines.map((l) => {
             const row = { ...l, schedule_date: clamp(l.schedule_date, trx) };
             if (desc[l.item_code]) row.description = desc[l.item_code];
+            const cand = prices[l.item_code] || [];
+            const hit = cand.find((c) => c.uom && c.uom === l.uom) || cand.find((c) => !c.uom) || cand[0];
+            if (hit) row[SELLING_FIELD] = hit.price_list_rate;
             Object.keys(row).forEach((k) => (row[k] == null || row[k] === "") && delete row[k]);
             return row;
           }),
