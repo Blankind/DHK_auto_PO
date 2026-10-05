@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import * as XLSX from "xlsx";
+import { call } from "@/lib/client";
 
 const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
 const A = { item_code: ["itemcode", "item", "code", "kodeitem", "kodebarang"], qty: ["qty", "quantity", "jumlah"] };
@@ -12,13 +13,6 @@ function num(v) {
   else s = s.includes(",") && !s.includes(".") ? s.replace(",", ".") : s.replace(/,/g, "");
   return parseFloat(s) || 0;
 }
-async function call(action, body) {
-  const r = await fetch(`/api/erp/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || "Permintaan gagal");
-  return j;
-}
-
 export default function Receipt() {
   const [po, setPo] = useState("");
   const [rows, setRows] = useState([]);
@@ -62,7 +56,7 @@ export default function Receipt() {
   return (
     <main>
       <h1>Purchase Receipt</h1>
-      <p className="sub"><a href="/">← Ke Purchase Import</a></p>
+      <p className="sub"><a href="/">← Ke Purchase Import</a> · <a href="/settings">Pengaturan</a></p>
       <p className="sub">Input nomor PO dan Excel penerimaan. Qty dialokasikan ke MR yang muat penuh, sisanya ke stock, lalu MR teratas.</p>
       <section>
         <label htmlFor="po">Nomor PO</label>

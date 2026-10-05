@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
+import { call } from "@/lib/client";
 
 const ALIAS = {
   item_code: ["itemcode", "item", "code", "kodeitem", "kodebarang"],
@@ -17,17 +18,6 @@ function num(v) {
   if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, "").replace(",", ".");
   else s = s.includes(",") && !s.includes(".") ? s.replace(",", ".") : s.replace(/,/g, "");
   return parseFloat(s) || 0;
-}
-
-async function call(action, body) {
-  const r = await fetch(`/api/erp/${action}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body || {}),
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || "Permintaan gagal");
-  return j;
 }
 
 export default function Page() {
@@ -107,7 +97,7 @@ export default function Page() {
   return (
     <main>
       <h1>Purchase Import</h1>
-      <p className="sub"><a href="/receipt">Ke Purchase Receipt →</a></p>
+      <p className="sub"><a href="/receipt">Ke Purchase Receipt →</a> · <a href="/settings">Pengaturan</a></p>
       <p className="sub">Upload Excel, qty dialokasikan ke Material Request aktif, sisanya jadi pembelian stock.</p>
 
       <section>

@@ -1,6 +1,15 @@
 {
   "name": "dehikas-purchase-import-web",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "next build", "start": "next start" },
-  "dependencies": { "next": "^15.0.0", "react": "^18.3.1", "react-dom": "^18.3.1", "xlsx": "^0.18.5" }
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  }
 }

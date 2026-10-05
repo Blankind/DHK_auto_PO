@@ -1,15 +1,15 @@
-# Dehikas Purchase Import (full Vercel)
+# Dehikas Purchase Import
 
-Tanpa custom app Frappe. Hanya memakai REST standar ERPNext.
+Program di-host di Vercel. API Key/Secret TIDAK disimpan di server/GitHub: tiap purchasing mengisinya sendiri di menu **Pengaturan** (disimpan di browser PC masing-masing).
 
-1. ERPNext: buat user API (role Purchase User/Manager + akses Read Material Request, Create/Submit Purchase Order). Generate API key/secret.
-2. Vercel: import repo ini, set env dari `.env.example`, tambah Upstash Redis dari Marketplace.
-3. Lokal: `npm i && cp .env.example .env.local && npm run dev`
+## Setup (admin, sekali)
+1. Vercel: import repo, isi env dari `.env.example` (`ERPNEXT_URL`; opsional Upstash).
+2. Tiap purchasing dibuatkan user API di ERPNext (role Purchase User/Manager) lalu generate API Key/Secret sendiri.
 
-## Env
-- Salin `.env.example` ke `.env.local`, isi nilai asli. File `.env*` di-ignore git (kecuali `.env.example`).
-- Di Vercel: isi via Settings > Environment Variables.
-- Jangan pernah commit key/secret.
+## Setup (tiap purchasing)
+Buka alamat Vercel → Pengaturan → isi API Key & Secret → Simpan & Tes Koneksi. Pakai browser/profil pribadi, jangan di PC bersama.
 
-## Purchase Receipt
-Halaman `/receipt`: input nomor PO (harus sudah submit) + Excel (Item Code, Qty). Alokasi: MR teratas yang muat penuh, sisa ke stock, jika stock habis ke MR teratas.
+## Halaman
+- `/` Purchase Import (Excel: Item Code, Qty, Rate, Description)
+- `/receipt` Purchase Receipt (nomor PO + Excel: Item Code, Qty)
+- `/settings` Pengaturan
