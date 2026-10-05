@@ -129,7 +129,7 @@ export default function Page() {
           <input id="fi" type="file" accept=".xlsx,.xls,.csv" onChange={(e) => onFile(e.target.files[0])} />
           <p className="sub" style={{ margin: "6px 0 0" }}>
             {fileName && `${fileName}: ${rows.length} baris. `}
-            <a href="/purchase_import_template.csv" download>Unduh template</a>
+            <a href="/purchase_import_template.xlsx" download>Unduh template</a>
           </p>
         </div>
         <div className="row">
