@@ -4,7 +4,10 @@ import { acquire, release } from "@/lib/lock";
 
 export const maxDuration = 60;
 
-const today = () => new Date().toISOString().slice(0, 10);
+// tanggal lokal Jakarta (bukan UTC), format YYYY-MM-DD
+const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+// Required By tidak boleh lebih awal dari tanggal PO
+const clamp = (d, min) => (!d || d < min ? min : d);
 
 const handlers = {
   async companies() {
@@ -33,18 +36,19 @@ const handlers = {
     try {
       // hitung ulang: jangan pakai hasil preview lama
       const { lines, summary } = await allocate(rows, company);
-      const dates = lines.map((l) => l.schedule_date).filter(Boolean).sort();
-      const schedule = dates[0] || today();
+      const trx = today();
+      const dates = lines.map((l) => clamp(l.schedule_date, trx)).sort();
+      const schedule = dates[0] || trx;
       const doc = await erp("frappe.client.insert", {
         doc: {
           doctype: "Purchase Order",
           supplier,
           company,
-          transaction_date: today(),
+          transaction_date: trx,
           schedule_date: schedule,
           docstatus: 1,
           items: lines.map((l) => {
-            const row = { ...l, schedule_date: l.schedule_date || schedule };
+            const row = { ...l, schedule_date: clamp(l.schedule_date, trx) };
             Object.keys(row).forEach((k) => (row[k] == null || row[k] === "") && delete row[k]);
             return row;
           }),
