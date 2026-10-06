@@ -30,24 +30,6 @@ const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const buildTerms = (address, extra) =>
   [address, extra].map((x) => String(x || "").trim()).filter(Boolean).map((x) => `<div>${esc(x)}</div>`).join("");
 
-// ubah description Item master hanya jika berbeda
-async function updateDescriptions(desc) {
-  const codes = Object.keys(desc);
-  if (!codes.length) return [];
-  const cur = await getList("Item", { fields: ["name", "description"], filters: [["name", "in", codes]] });
-  const old = Object.fromEntries(cur.map((i) => [i.name, (i.description || "").trim()]));
-  const errors = [];
-  for (const c of codes) {
-    if (old[c] === desc[c]) continue;
-    try {
-      await erp("frappe.client.set_value", { doctype: "Item", name: c, fieldname: "description", value: desc[c] });
-    } catch (e) {
-      errors.push(`${c}: ${e.message}`);
-    }
-  }
-  return errors;
-}
-
 const handlers = {
   async warehouses({ company }) {
     const r = await getList("Warehouse", { fields: ["name"], filters: [["company", "=", company], ["is_group", "=", 0], ["disabled", "=", 0]], order_by: "name asc" });
@@ -147,8 +129,7 @@ const handlers = {
           }),
         },
       });
-      const descErrors = await updateDescriptions(desc).catch((e) => [e.message]);
-      return { name: doc.name, url: `${cfg.erpnext_url}/app/purchase-order/${doc.name}`, summary, lines, descErrors };
+      return { name: doc.name, url: `${cfg.erpnext_url}/app/purchase-order/${doc.name}`, summary, lines };
     } finally {
       await release(lock);
     }

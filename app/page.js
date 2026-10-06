@@ -28,7 +28,7 @@ export default function PurchaseOrder() {
   const [templates, setTemplates] = useState([]);
   const [tcName, setTcName] = useState("");
   const [addrId, setAddrId] = useState("");
-  const [pickup, setPickup] = useState(PICKUP);
+  const [pickup, setPickup] = useState(""); // default kosong
   const [other, setOther] = useState("");
   const [supTxt, setSupTxt] = useState("");
   const [sups, setSups] = useState([]);
@@ -50,7 +50,6 @@ export default function PurchaseOrder() {
 
   useEffect(() => {
     call("terms_templates").then((t) => { setTemplates(t); setTcName(t.includes(pref("tc")) ? pref("tc") : ""); }).catch(() => {});
-    setPickup(pref("pickup") === "Others" ? "Others" : PICKUP);
   }, []);
 
   useEffect(() => {
@@ -122,11 +121,11 @@ export default function PurchaseOrder() {
     addLog({ ...meta, action: "cek", status: "ok", message: `${p.lines.length} baris PO` });
   });
   const create = run("buat", async () => {
-    if (!confirm(`Buat Purchase Order (draft) untuk ${supplier}?\nDescription item akan ikut diperbarui.`)) return;
+    if (!confirm(`Buat Purchase Order (draft) untuk ${supplier}?`)) return;
     const d = await call("create", { supplier, company, items: rows, naming_series: series, set_warehouse: warehouse, cost_center: costCenter, tc_name: tcName, terms_address: address, terms_extra: extra });
     setDone(d);
     setPreview(null);
-    addLog({ ...meta, action: "buat", status: "ok", ref: d.name, url: d.url, message: `Draft dibuat${warehouse ? ` · WH ${warehouse}` : ""}${costCenter ? ` · CC ${costCenter}` : ""}${d.descErrors?.length ? ` · Description gagal: ${d.descErrors.join("; ")}` : ""}` });
+    addLog({ ...meta, action: "buat", status: "ok", ref: d.name, url: d.url, message: `Draft dibuat${warehouse ? ` · WH ${warehouse}` : ""}${costCenter ? ` · CC ${costCenter}` : ""}` });
   });
 
   const sum = done?.summary || preview?.summary;
@@ -202,7 +201,8 @@ export default function PurchaseOrder() {
           </div>
           <div>
             <label htmlFor="pk">Pengambilan</label>
-            <select id="pk" value={pickup} onChange={(e) => { setPickup(e.target.value); setPref("pickup", e.target.value); }}>
+            <select id="pk" value={pickup} onChange={(e) => setPickup(e.target.value)}>
+              <option value="">- Tidak ada -</option>
               <option value={PICKUP}>{PICKUP}</option>
               <option value="Others">Others</option>
             </select>
@@ -240,7 +240,6 @@ export default function PurchaseOrder() {
         {done && (
           <div className="alert ok">
             Purchase Order <a href={done.url} target="_blank" rel="noreferrer"><b>{done.name}</b></a> dibuat sebagai draft.
-            {done.descErrors?.length > 0 && <div>Description gagal diubah: {done.descErrors.join("; ")}</div>}
           </div>
         )}
       </div>
