@@ -25,6 +25,11 @@ async function sellingPrices(codes, date, list) {
   return map;
 }
 
+const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\r?\n/g, "<br>");
+// Terms (Text Editor / HTML): alamat gudang, lalu baris pengambilan di bawahnya
+const buildTerms = (address, extra) =>
+  [address, extra].map((x) => String(x || "").trim()).filter(Boolean).map((x) => `<div>${esc(x)}</div>`).join("");
+
 // ubah description Item master hanya jika berbeda
 async function updateDescriptions(desc) {
   const codes = Object.keys(desc);
@@ -44,6 +49,19 @@ async function updateDescriptions(desc) {
 }
 
 const handlers = {
+  async warehouses({ company }) {
+    const r = await getList("Warehouse", { fields: ["name"], filters: [["company", "=", company], ["is_group", "=", 0], ["disabled", "=", 0]], order_by: "name asc" });
+    return r.map((x) => x.name);
+  },
+  async cost_centers({ company }) {
+    const r = await getList("Cost Center", { fields: ["name"], filters: [["company", "=", company], ["is_group", "=", 0], ["disabled", "=", 0]], order_by: "name asc" });
+    return r.map((x) => x.name);
+  },
+  async terms_templates() {
+    const r = await getList("Terms and Conditions", { fields: ["name"], filters: [["disabled", "=", 0], ["buying", "=", 1]], order_by: "name asc" })
+      .catch(() => getList("Terms and Conditions", { fields: ["name"], order_by: "name asc" }));
+    return r.map((x) => x.name);
+  },
   async naming_series({ doctype }) {
     if (!["Purchase Order", "Purchase Receipt"].includes(doctype)) throw new Error("Doctype tidak didukung");
     let options = [];
@@ -89,7 +107,7 @@ const handlers = {
     if (!company) throw new Error("Company wajib");
     return allocate(cleanRows(items), company);
   },
-  async create({ supplier, company, items, naming_series }) {
+  async create({ supplier, company, items, naming_series, set_warehouse, cost_center, tc_name, terms_address, terms_extra }) {
     if (!supplier || !company) throw new Error("Supplier dan Company wajib");
     const rows = cleanRows(items);
     const desc = {};
@@ -107,6 +125,10 @@ const handlers = {
         doc: {
           doctype: "Purchase Order",
           ...(naming_series ? { naming_series: String(naming_series) } : {}),
+          ...(set_warehouse ? { set_warehouse } : {}),
+          ...(cost_center ? { cost_center } : {}),
+          ...(tc_name ? { tc_name } : {}),
+          ...(buildTerms(terms_address, terms_extra) ? { terms: buildTerms(terms_address, terms_extra) } : {}),
           supplier,
           company,
           transaction_date: trx,
@@ -115,6 +137,8 @@ const handlers = {
           items: lines.map((l) => {
             const row = { ...l, schedule_date: clamp(l.schedule_date, trx) };
             if (desc[l.item_code]) row.description = desc[l.item_code];
+            if (set_warehouse) row.warehouse = set_warehouse; // semua item mengikuti target warehouse
+            if (cost_center) row.cost_center = cost_center;
             const cand = prices[l.item_code] || [];
             const hit = cand.find((c) => c.uom && c.uom === l.uom) || cand.find((c) => !c.uom) || cand[0];
             if (hit) row[cfg.selling_field] = hit.price_list_rate;
@@ -130,14 +154,14 @@ const handlers = {
     }
   },
   async receipt_preview({ po, items }) {
-    const { lines, summary } = await planReceipt(po, cleanRows(items));
-    return { lines, summary };
+    const { lines, summary, poRows } = await planReceipt(po, cleanRows(items));
+    return { lines, summary, po_rows: poRows };
   },
-  async receipt_create({ po, items, series }) {
+  async receipt_create({ po, items, series, lines }) {
     const rows = cleanRows(items);
     const lock = await acquire();
     try {
-      return await createReceipt(po, rows, series);
+      return await createReceipt(po, rows, series, lines);
     } finally {
       await release(lock);
     }
