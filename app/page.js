@@ -75,7 +75,8 @@ export default function PurchaseOrder() {
   }, [supTxt]);
 
   const onWarehouse = (v) => { setWarehouse(v); setPref("wh", v); setAddrId(addressFor(v)?.id || ""); };
-  const address = ADDRESSES.find((a) => a.id === addrId)?.text || "";
+  const addrText = ADDRESSES.find((a) => a.id === addrId)?.text || "";
+  const address = pickup ? "" : addrText; // LOCO / Others: alamat warehouse tidak dipakai
   const extra = pickup === "Others" ? other.trim() : pickup;
   const termsOk = pickup !== "Others" || !!other.trim();
 
@@ -193,11 +194,11 @@ export default function PurchaseOrder() {
         <div className="grid">
           <div>
             <label htmlFor="ad">Alamat pengiriman</label>
-            <select id="ad" value={addrId} onChange={(e) => setAddrId(e.target.value)}>
+            <select id="ad" value={addrId} onChange={(e) => setAddrId(e.target.value)} disabled={!!pickup}>
               <option value="">- Tanpa alamat -</option>
               {ADDRESSES.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
             </select>
-            <p className="hint">Otomatis mengikuti warehouse, bisa diubah manual.</p>
+            <p className="hint">{pickup ? "Tidak dipakai karena Pengambilan dipilih." : "Otomatis mengikuti warehouse, bisa diubah manual."}</p>
           </div>
           <div>
             <label htmlFor="pk">Pengambilan</label>
