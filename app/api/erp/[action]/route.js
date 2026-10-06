@@ -1,4 +1,4 @@
-import { erp, getList } from "@/lib/erp";
+import { erp, erpRaw, getList } from "@/lib/erp";
 import { allocate, cleanRows } from "@/lib/allocate";
 import { acquire, release } from "@/lib/lock";
 import { planReceipt, createReceipt } from "@/lib/receipt";
@@ -44,6 +44,25 @@ async function updateDescriptions(desc) {
 }
 
 const handlers = {
+  async naming_series({ doctype }) {
+    if (!["Purchase Order", "Purchase Receipt"].includes(doctype)) throw new Error("Doctype tidak didukung");
+    let options = [];
+    let def = "";
+    try {
+      const j = await erpRaw("frappe.desk.form.load.getdoctype", { doctype });
+      const meta = (j.docs || []).find((d) => d.name === doctype) || j.docs?.[0];
+      const f = (meta?.fields || []).find((x) => x.fieldname === "naming_series");
+      if (f) {
+        options = String(f.options || "").split("\n").map((x) => x.trim()).filter(Boolean);
+        def = f.default || "";
+      }
+    } catch {}
+    if (!options.length) {
+      const rows = await getList(doctype, { fields: ["naming_series"], order_by: "creation desc", limit_page_length: 200 }).catch(() => []);
+      options = [...new Set(rows.map((r) => r.naming_series).filter(Boolean))];
+    }
+    return { options, default: options.includes(def) ? def : options[0] || "" };
+  },
   async server_info() {
     return { erpnext_url: getSettings().erpnext_url };
   },
@@ -70,7 +89,7 @@ const handlers = {
     if (!company) throw new Error("Company wajib");
     return allocate(cleanRows(items), company);
   },
-  async create({ supplier, company, items }) {
+  async create({ supplier, company, items, naming_series }) {
     if (!supplier || !company) throw new Error("Supplier dan Company wajib");
     const rows = cleanRows(items);
     const desc = {};
@@ -87,6 +106,7 @@ const handlers = {
       const doc = await erp("frappe.client.insert", {
         doc: {
           doctype: "Purchase Order",
+          ...(naming_series ? { naming_series: String(naming_series) } : {}),
           supplier,
           company,
           transaction_date: trx,
@@ -113,11 +133,11 @@ const handlers = {
     const { lines, summary } = await planReceipt(po, cleanRows(items));
     return { lines, summary };
   },
-  async receipt_create({ po, items }) {
+  async receipt_create({ po, items, series }) {
     const rows = cleanRows(items);
     const lock = await acquire();
     try {
-      return await createReceipt(po, rows);
+      return await createReceipt(po, rows, series);
     } finally {
       await release(lock);
     }
