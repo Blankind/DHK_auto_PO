@@ -4,7 +4,6 @@ import { call } from "@/lib/client";
 import { addLog } from "@/lib/log";
 import { fmt } from "@/lib/excel";
 import { dnRef, dnRefs } from "@/lib/dnref";
-import SeriesSelect from "@/components/SeriesSelect";
 
 const pref = (k) => { try { return localStorage.getItem(`dhk_se_${k}`) || ""; } catch { return ""; } };
 const setPref = (k, v) => { try { localStorage.setItem(`dhk_se_${k}`, v); } catch {} };
@@ -17,7 +16,7 @@ export default function StockEntry() {
   const [warehouses, setWarehouses] = useState([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [series, setSeries] = useState("");
+  const [tujuan, setTujuan] = useState("");
 
   const [txt, setTxt] = useState("");
   const [found, setFound] = useState([]);
@@ -52,7 +51,8 @@ export default function StockEntry() {
   const headOk = company && costCenter && from && to && !sameWh;
   const names = selected.map((d) => d.name);
   const total = preview?.lines.reduce((a, l) => a + l.qty, 0) || 0;
-  const meta = { type: "SE", series, po: dnRefs(selected), message: `${from} → ${to} · CC ${costCenter}` };
+  const where = `${from} → ${to} · CC ${costCenter}${tujuan.trim() ? ` · Tujuan: ${tujuan.trim()}` : ""}`;
+  const meta = { type: "SE", po: dnRefs(selected), message: where };
 
   const add = (d) => { setSelected((p) => (p.some((x) => x.name === d.name) ? p : [...p, d])); setPreview(null); setDone(null); };
   const remove = (n) => { setSelected((p) => p.filter((x) => x.name !== n)); setPreview(null); };
@@ -71,10 +71,10 @@ export default function StockEntry() {
   });
   const create = run("buat", async () => {
     if (!confirm(`Buat Stock Entry (draft)?\n${from} → ${to}`)) return;
-    const d = await call("se_create", { company, cost_center: costCenter, from_warehouse: from, to_warehouse: to, dns: names, naming_series: series });
+    const d = await call("se_create", { company, cost_center: costCenter, from_warehouse: from, to_warehouse: to, dns: names, tujuan });
     setDone(d);
     setPreview(null);
-    addLog({ ...meta, action: "buat", status: "ok", ref: d.name, url: d.url, items: d.lines.length, qty: d.lines.reduce((a, l) => a + l.qty, 0), message: `Draft dibuat · ${from} → ${to} · CC ${costCenter}` });
+    addLog({ ...meta, action: "buat", status: "ok", ref: d.name, url: d.url, items: d.lines.length, qty: d.lines.reduce((a, l) => a + l.qty, 0), message: `Draft dibuat · ${where}` });
   });
 
   const WhSelect = ({ id, value, set, k, exclude }) => (
@@ -106,8 +106,8 @@ export default function StockEntry() {
             </select>
           </div>
           <div>
-            <label htmlFor="ns">Naming Series</label>
-            <SeriesSelect id="ns" doctype="Stock Entry" value={series} onChange={setSeries} />
+            <label htmlFor="tj">Tujuan</label>
+            <input id="tj" value={tujuan} onChange={(e) => setTujuan(e.target.value)} placeholder="Tujuan pengiriman (opsional)" autoComplete="off" />
           </div>
         </div>
         <div className="grid" style={{ marginTop: 16 }}>

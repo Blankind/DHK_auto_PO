@@ -46,7 +46,7 @@ const handlers = {
     return r.map((x) => x.name);
   },
   async naming_series({ doctype }) {
-    if (!["Purchase Order", "Purchase Receipt", "Stock Entry"].includes(doctype)) throw new Error("Doctype tidak didukung");
+    if (!["Purchase Order", "Purchase Receipt"].includes(doctype)) throw new Error("Doctype tidak didukung");
     let options = [];
     let def = "";
     try {

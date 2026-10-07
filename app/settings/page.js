@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { call, loadCfg, saveCfg, clearCfg } from "@/lib/client";
 
-const EMPTY = { api_key: "", api_secret: "", default_company: "", selling_price_list: "Grosir", selling_field: "price_list_rate_selling", pr_submit: false, se_dn_field: "dn_reference" };
+const EMPTY = { api_key: "", api_secret: "", default_company: "", selling_price_list: "Grosir", selling_field: "price_list_rate_selling", pr_submit: false, se_dn_field: "custom_dn_reference", se_tujuan_field: "custom_tujuan" };
 
 export default function Settings() {
   const [f, setF] = useState(EMPTY);
@@ -15,7 +15,7 @@ export default function Settings() {
 
   useEffect(() => {
     const c = loadCfg();
-    setF((p) => ({ ...p, ...c, api_secret: "" }));
+    setF((p) => ({ ...p, ...c, api_secret: "", se_dn_field: !c.se_dn_field || c.se_dn_field === "dn_reference" ? "custom_dn_reference" : c.se_dn_field }));
     setSecretSet(!!c.api_secret);
     call("server_info").then((s) => setServer(s.erpnext_url || "")).catch(() => {});
   }, []);
@@ -95,7 +95,11 @@ export default function Settings() {
           </div>
           <div>
             <label htmlFor="dnf">Fieldname DN reference di Stock Entry</label>
-            <input id="dnf" value={f.se_dn_field || ""} onChange={set("se_dn_field")} placeholder="dn_reference" />
+            <input id="dnf" value={f.se_dn_field || ""} onChange={set("se_dn_field")} placeholder="custom_dn_reference" />
+          </div>
+          <div>
+            <label htmlFor="tjf">Fieldname Tujuan di Stock Entry</label>
+            <input id="tjf" value={f.se_tujuan_field || ""} onChange={set("se_tujuan_field")} placeholder="custom_tujuan" />
           </div>
         </div>
         <div style={{ marginTop: 16 }}>
