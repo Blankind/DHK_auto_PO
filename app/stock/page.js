@@ -121,7 +121,7 @@ export default function StockEntry() {
         <h2 className="card-title">2. Delivery Note referensi {!headOk && <small>Lengkapi data mutasi dulu</small>}</h2>
         <label htmlFor="dn">Cari nomor DN / nama customer</label>
         <input id="dn" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="Ketik nomor DN, atau tempel beberapa nomor dipisah koma/spasi" autoComplete="off" />
-        <p className="hint">Hanya DN yang sudah submit milik company ini.</p>
+        <p className="hint">Hanya DN draft (belum submit) milik company ini.</p>
 
         {found.length > 0 && (
           <div style={{ marginTop: 12 }}>
