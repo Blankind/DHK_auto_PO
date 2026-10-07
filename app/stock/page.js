@@ -155,7 +155,7 @@ export default function StockEntry() {
               const on = selected.some((x) => x.name === d.name);
               return (
                 <div className="opt" key={d.name}>
-                  <div><b>{dnRef(d)}</b><small>{d.name} · {d.posting_date}</small></div>
+                  <div><b>{d.name}</b><small>{d.customer_name || d.customer} · {d.posting_date}</small></div>
                   <button className="btn sec sm" disabled={on} onClick={() => add(d)}>{on ? "Dipilih" : "Pilih"}</button>
                 </div>
               );

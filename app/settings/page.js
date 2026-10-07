@@ -94,7 +94,7 @@ export default function Settings() {
             <input id="sf" value={f.selling_field} onChange={set("selling_field")} />
           </div>
           <div>
-            <label htmlFor="dnf">Fieldname DN reference di Stock Entry</label>
+            <label htmlFor="dnf">Fieldname DN reference di Stock Entry Detail (baris item)</label>
             <input id="dnf" value={f.se_dn_field || ""} onChange={set("se_dn_field")} placeholder="custom_dn_reference" />
           </div>
           <div>
