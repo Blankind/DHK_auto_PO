@@ -2,6 +2,7 @@ import { erp, erpRaw, getList } from "@/lib/erp";
 import { allocate, cleanRows } from "@/lib/allocate";
 import { acquire, release } from "@/lib/lock";
 import { planReceipt, createReceipt } from "@/lib/receipt";
+import { searchDn, collect, createStockEntry } from "@/lib/stock";
 import { getSettings, withSettings } from "@/lib/settings";
 
 export const maxDuration = 60;
@@ -45,7 +46,7 @@ const handlers = {
     return r.map((x) => x.name);
   },
   async naming_series({ doctype }) {
-    if (!["Purchase Order", "Purchase Receipt"].includes(doctype)) throw new Error("Doctype tidak didukung");
+    if (!["Purchase Order", "Purchase Receipt", "Stock Entry"].includes(doctype)) throw new Error("Doctype tidak didukung");
     let options = [];
     let def = "";
     try {
@@ -62,6 +63,15 @@ const handlers = {
       options = [...new Set(rows.map((r) => r.naming_series).filter(Boolean))];
     }
     return { options, default: options.includes(def) ? def : options[0] || "" };
+  },
+  async dn_search(b) {
+    return searchDn(b);
+  },
+  async se_preview({ dns, company }) {
+    return collect(dns, company);
+  },
+  async se_create(b) {
+    return createStockEntry(b); // tanpa lock: tidak berbagi state dengan PO/Receipt
   },
   async server_info() {
     return { erpnext_url: getSettings().erpnext_url };

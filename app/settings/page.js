@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { call, loadCfg, saveCfg, clearCfg } from "@/lib/client";
 
-const EMPTY = { api_key: "", api_secret: "", default_company: "", selling_price_list: "Grosir", selling_field: "price_list_rate_selling", pr_submit: false };
+const EMPTY = { api_key: "", api_secret: "", default_company: "", selling_price_list: "Grosir", selling_field: "price_list_rate_selling", pr_submit: false, se_dn_field: "dn_reference" };
 
 export default function Settings() {
   const [f, setF] = useState(EMPTY);
@@ -92,6 +92,10 @@ export default function Settings() {
           <div>
             <label htmlFor="sf">Fieldname harga jual di item PO</label>
             <input id="sf" value={f.selling_field} onChange={set("selling_field")} />
+          </div>
+          <div>
+            <label htmlFor="dnf">Fieldname DN reference di Stock Entry</label>
+            <input id="dnf" value={f.se_dn_field || ""} onChange={set("se_dn_field")} placeholder="dn_reference" />
           </div>
         </div>
         <div style={{ marginTop: 16 }}>

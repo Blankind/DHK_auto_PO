@@ -7,6 +7,7 @@ import { loadCfg } from "@/lib/client";
 const TABS = [
   { href: "/", label: "Purchase Order" },
   { href: "/receipt", label: "Purchase Receipt" },
+  { href: "/stock", label: "Stock Entry" },
   { href: "/log", label: "Log" },
   { href: "/settings", label: "Pengaturan" },
 ];

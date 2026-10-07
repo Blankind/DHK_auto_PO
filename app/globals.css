@@ -86,3 +86,8 @@ td.wrap{white-space:normal;min-width:220px}
 .toolbar>div{min-width:150px}
 .toolbar .grow{flex:1;min-width:200px}
 .check{display:flex;gap:8px;align-items:center;color:var(--ink);font-weight:400;font-size:14px}
+.locked{opacity:.45;pointer-events:none;user-select:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.opt+.opt{margin-top:8px}
+.opt small{color:var(--mute);display:block}

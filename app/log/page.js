@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { clearLogs, fmtTime, getLogs, toCsv } from "@/lib/log";
 import { fmt } from "@/lib/excel";
 
-const TYPE = { PO: "Purchase Order", PR: "Purchase Receipt" };
+const TYPE = { PO: "Purchase Order", PR: "Purchase Receipt", SE: "Stock Entry" };
 const ACT = { cek: "Cek alokasi", buat: "Buat dokumen" };
 
 export default function LogPage() {
@@ -52,6 +52,7 @@ export default function LogPage() {
       <div className="stats">
         <div className="stat"><span>PO dibuat</span><b>{made("PO")}</b></div>
         <div className="stat"><span>Receipt dibuat</span><b>{made("PR")}</b></div>
+        <div className="stat"><span>Stock Entry dibuat</span><b>{made("SE")}</b></div>
         <div className="stat"><span>Gagal</span><b style={{ color: failed ? "var(--err)" : undefined }}>{failed}</b></div>
         <div className="stat"><span>Total entri</span><b>{logs?.length ?? 0}</b></div>
       </div>
@@ -59,14 +60,14 @@ export default function LogPage() {
       <div className="card">
         <div className="toolbar">
           <div className="grow"><label htmlFor="q">Cari</label><input id="q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="No. dokumen, supplier, file, pesan…" /></div>
-          <div><label htmlFor="t">Jenis</label><select id="t" value={type} onChange={(e) => setType(e.target.value)}><option value="">Semua</option><option value="PO">Purchase Order</option><option value="PR">Purchase Receipt</option></select></div>
+          <div><label htmlFor="t">Jenis</label><select id="t" value={type} onChange={(e) => setType(e.target.value)}><option value="">Semua</option><option value="PO">Purchase Order</option><option value="PR">Purchase Receipt</option><option value="SE">Stock Entry</option></select></div>
           <div><label htmlFor="a">Aksi</label><select id="a" value={action} onChange={(e) => setAction(e.target.value)}><option value="">Semua</option><option value="buat">Buat dokumen</option><option value="cek">Cek alokasi</option></select></div>
           <div><label htmlFor="s">Status</label><select id="s" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Semua</option><option value="ok">Berhasil</option><option value="gagal">Gagal</option></select></div>
         </div>
 
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Waktu</th><th>Jenis</th><th>Aksi</th><th>Status</th><th>Dokumen</th><th>Supplier / PO</th><th>Series</th><th className="n">Item</th><th className="n">Qty</th><th>File</th><th>Pesan</th></tr></thead>
+            <thead><tr><th>Waktu</th><th>Jenis</th><th>Aksi</th><th>Status</th><th>Dokumen</th><th>Supplier / PO / DN</th><th>Series</th><th className="n">Item</th><th className="n">Qty</th><th>File</th><th>Pesan</th></tr></thead>
             <tbody>
               {shown.map((l) => (
                 <tr key={l.id}>
@@ -75,7 +76,7 @@ export default function LogPage() {
                   <td>{ACT[l.action] || l.action}</td>
                   <td><span className={`badge ${l.status === "ok" ? "ok" : "err"}`}>{l.status === "ok" ? "Berhasil" : "Gagal"}</span></td>
                   <td>{l.url ? <a href={l.url} target="_blank" rel="noreferrer">{l.ref}</a> : "-"}</td>
-                  <td>{l.type === "PR" ? l.po || "-" : l.supplier || "-"}</td>
+                  <td>{l.type === "PO" ? l.supplier || "-" : l.po || "-"}</td>
                   <td>{l.series || "-"}</td>
                   <td className="n">{l.items ?? "-"}</td>
                   <td className="n">{l.qty != null ? fmt(l.qty) : "-"}</td>
