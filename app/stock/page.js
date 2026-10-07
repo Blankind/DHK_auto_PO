@@ -19,6 +19,7 @@ export default function StockEntry() {
   const [tujuan, setTujuan] = useState("");
   const [tujuanOpts, setTujuanOpts] = useState([]);
 
+  const [filterCc, setFilterCc] = useState(true);
   const [txt, setTxt] = useState("");
   const [found, setFound] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -44,13 +45,16 @@ export default function StockEntry() {
     call("warehouses", { company }).then((w) => { setWarehouses(w); setFrom(w.includes(pref("from")) ? pref("from") : ""); setTo(w.includes(pref("to")) ? pref("to") : ""); }).catch(() => setWarehouses([]));
   }, [company]);
 
+  // Tujuan sudah diisi -> pencarian DN dipersempit ke cost center yang dipilih
+  const ccFilter = tujuan.trim() && filterCc && costCenter ? costCenter : "";
+
   useEffect(() => {
     const t = setTimeout(() => {
-      if (txt.trim().length >= 2) call("dn_search", { txt, company }).then(setFound).catch((e) => setErr(e.message));
+      if (txt.trim().length >= 2) call("dn_search", { txt, company, cost_center: ccFilter || undefined }).then(setFound).catch((e) => setErr(e.message));
       else setFound([]);
     }, 350);
     return () => clearTimeout(t);
-  }, [txt, company]);
+  }, [txt, company, ccFilter]);
 
   const sameWh = from && to && from === to;
   const headOk = company && costCenter && from && to && !sameWh;
@@ -133,7 +137,13 @@ export default function StockEntry() {
         <h2 className="card-title">2. Delivery Note referensi {!headOk && <small>Lengkapi data mutasi dulu</small>}</h2>
         <label htmlFor="dn">Cari nomor DN / nama customer</label>
         <input id="dn" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="Ketik nomor DN, atau tempel beberapa nomor dipisah koma/spasi" autoComplete="off" />
-        <p className="hint">Hanya DN draft (belum submit) milik company ini.</p>
+        <p className="hint">Hanya DN draft (belum submit) milik company ini. Cukup ketik 4 digit terakhir nomor DN (mis. 0015).</p>
+        {tujuan.trim() && costCenter && (
+          <label className="hint" style={{ display: "flex", gap: 8, alignItems: "center", margin: "6px 0 0", cursor: "pointer" }}>
+            <input type="checkbox" checked={filterCc} onChange={(e) => setFilterCc(e.target.checked)} style={{ width: "auto" }} />
+            Batasi DN ke cost center <b>{costCenter}</b>
+          </label>
+        )}
 
         {found.length > 0 && (
           <div style={{ marginTop: 12 }}>
@@ -145,7 +155,7 @@ export default function StockEntry() {
               const on = selected.some((x) => x.name === d.name);
               return (
                 <div className="opt" key={d.name}>
-                  <div><b>{d.name}</b><small>{d.customer_name || d.customer} · {d.posting_date}</small></div>
+                  <div><b>{dnRef(d)}</b><small>{d.name} · {d.posting_date}</small></div>
                   <button className="btn sec sm" disabled={on} onClick={() => add(d)}>{on ? "Dipilih" : "Pilih"}</button>
                 </div>
               );
