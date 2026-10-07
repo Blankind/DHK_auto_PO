@@ -17,6 +17,7 @@ export default function StockEntry() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [tujuan, setTujuan] = useState("");
+  const [tujuanOpts, setTujuanOpts] = useState([]);
 
   const [txt, setTxt] = useState("");
   const [found, setFound] = useState([]);
@@ -30,6 +31,10 @@ export default function StockEntry() {
     Promise.all([call("companies"), call("default_company")])
       .then(([c, d]) => { setCompanies(c || []); setCompany(d || c?.[0] || ""); })
       .catch((e) => setErr(e.message));
+  }, []);
+
+  useEffect(() => {
+    call("tujuan_options").then((r) => setTujuanOpts(r.options || [])).catch(() => setTujuanOpts([]));
   }, []);
 
   useEffect(() => {
@@ -107,7 +112,14 @@ export default function StockEntry() {
           </div>
           <div>
             <label htmlFor="tj">Tujuan</label>
-            <input id="tj" value={tujuan} onChange={(e) => setTujuan(e.target.value)} placeholder="Tujuan pengiriman (opsional)" autoComplete="off" />
+            {tujuanOpts.length ? (
+              <select id="tj" value={tujuan} onChange={(e) => setTujuan(e.target.value)}>
+                <option value="">- Pilih tujuan -</option>
+                {tujuanOpts.map((o) => <option key={o}>{o}</option>)}
+              </select>
+            ) : (
+              <input id="tj" value={tujuan} onChange={(e) => setTujuan(e.target.value)} placeholder="Tujuan pengiriman (opsional)" autoComplete="off" />
+            )}
           </div>
         </div>
         <div className="grid" style={{ marginTop: 16 }}>
