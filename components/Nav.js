@@ -8,6 +8,7 @@ const TABS = [
   { href: "/", label: "Purchase Order" },
   { href: "/receipt", label: "Purchase Receipt" },
   { href: "/stock", label: "Stock Entry" },
+  { href: "/mutasi", label: "Cek Mutasi" },
   { href: "/log", label: "Log" },
   { href: "/settings", label: "Pengaturan" },
 ];

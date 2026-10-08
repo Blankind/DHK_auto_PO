@@ -14,3 +14,4 @@ Buka alamat Vercel → Pengaturan → isi API Key & Secret → Simpan & Tes Kone
 - `/receipt` Purchase Receipt (nomor PO + Excel: Item Code, Qty)
 - `/settings` Pengaturan
 - `/stock` Stock Entry (Material Transfer dari Delivery Note, item diakumulasikan, DN reference otomatis)
+- `/mutasi` Cek Mutasi (rekap Stock Entry Material Transfer draft: total tonase per tujuan)

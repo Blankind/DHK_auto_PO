@@ -3,6 +3,7 @@ import { allocate, cleanRows } from "@/lib/allocate";
 import { acquire, release } from "@/lib/lock";
 import { planReceipt, createReceipt } from "@/lib/receipt";
 import { searchDn, collect, createStockEntry, tujuanOptions } from "@/lib/stock";
+import { mutasiDraft } from "@/lib/mutasi";
 import { getSettings, withSettings } from "@/lib/settings";
 
 export const maxDuration = 60;
@@ -63,6 +64,9 @@ const handlers = {
       options = [...new Set(rows.map((r) => r.naming_series).filter(Boolean))];
     }
     return { options, default: options.includes(def) ? def : options[0] || "" };
+  },
+  async mutasi_check(b) {
+    return mutasiDraft(b);
   },
   async tujuan_options() {
     return tujuanOptions();
