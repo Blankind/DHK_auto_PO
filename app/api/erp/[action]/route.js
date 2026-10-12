@@ -152,8 +152,8 @@ const handlers = {
     }
   },
   async receipt_preview({ po, items }) {
-    const { lines, summary, poRows } = await planReceipt(po, cleanRows(items));
-    return { lines, summary, po_rows: poRows };
+    const { lines, summary, poRows, drafts } = await planReceipt(po, cleanRows(items));
+    return { lines, summary, po_rows: poRows, drafts };
   },
   async receipt_create({ po, items, series, lines }) {
     const rows = cleanRows(items);

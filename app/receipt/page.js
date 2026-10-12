@@ -12,7 +12,7 @@ const ALIAS = {
 const r6 = (n) => Math.round(n * 1e6) / 1e6;
 let uid = 0;
 const toEdit = (lines) => lines.map((l) => ({ id: ++uid, poi: l.purchase_order_item, qty: String(l.qty) }));
-const label = (r) => `${r.material_request || "Stock"}${r.item_inden ? ` · ${r.item_inden}` : ""} (sisa ${fmt(r.remaining)})`;
+const label = (r) => `${r.material_request || "Stock"}${r.item_inden ? ` · ${r.item_inden}` : ""} (sisa ${fmt(r.remaining)}${r.reserved ? `, ${fmt(r.reserved)} di draft` : ""})`;
 
 export default function Receipt() {
   const [po, setPo] = useState("");
@@ -149,6 +149,7 @@ export default function Receipt() {
           <button className="btn" disabled={!preview || !validLines.length || anyOver || !!busy} onClick={create}>{busy === "buat" && <i className="spin" />}Buat Purchase Receipt</button>
         </div>
         {err && <div className="alert err" role="alert">{err}</div>}
+        {preview?.drafts?.length > 0 && <div className="alert warn">Ada draft Purchase Receipt lain untuk PO ini ({preview.drafts.map((d) => `${d.name}: ${fmt(d.qty)}`).join(", ")}). Qty-nya sudah dikurangi dari sisa PO. Submit atau hapus draft itu jika salah.</div>}
         {anyOver && <div className="alert warn">Ada qty yang melebihi sisa baris PO (ditandai merah). Kurangi qty atau pindahkan ke baris lain.</div>}
         {preview && !anyOver && hasDiff && <div className="alert warn">Total alokasi berbeda dari qty Excel. Lihat kolom Selisih; dokumen tetap bisa dibuat setelah konfirmasi.</div>}
         {done && <div className="alert ok">Purchase Receipt <a href={done.url} target="_blank" rel="noreferrer"><b>{done.name}</b></a> dibuat ({done.submitted ? "submitted" : "draft"}).</div>}
