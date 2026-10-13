@@ -74,8 +74,8 @@ const handlers = {
   async dn_search(b) {
     return searchDn(b);
   },
-  async se_preview({ dns, company }) {
-    return collect(dns, company);
+  async se_preview({ dns, company, from_warehouse }) {
+    return collect(dns, company, from_warehouse);
   },
   async se_create(b) {
     return createStockEntry(b); // tanpa lock: tidak berbagi state dengan PO/Receipt

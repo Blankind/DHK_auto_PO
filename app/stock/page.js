@@ -24,6 +24,7 @@ export default function StockEntry() {
   const [found, setFound] = useState([]);
   const [selected, setSelected] = useState([]);
   const [preview, setPreview] = useState(null);
+  const [skip, setSkip] = useState([]);
   const [done, setDone] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
@@ -56,6 +57,7 @@ export default function StockEntry() {
     return () => clearTimeout(t);
   }, [txt, company, ccFilter]);
 
+  const shown = preview ? preview.lines.filter((l) => !skip.includes(l.key)) : done?.lines || [];
   const sameWh = from && to && from === to;
   const headOk = company && costCenter && from && to && !sameWh;
   const names = selected.map((d) => d.name);
@@ -74,13 +76,14 @@ export default function StockEntry() {
   };
 
   const load = run("cek", async () => {
-    const p = await call("se_preview", { dns: names, company });
+    const p = await call("se_preview", { dns: names, company, from_warehouse: from });
     setPreview(p);
+    setSkip(p.lines.filter((l) => l.no_stock).map((l) => l.key)); // stok 0 dikeluarkan secara default, bisa dicentang lagi
     addLog({ ...meta, action: "cek", status: "ok", items: p.lines.length, qty: p.lines.reduce((a, l) => a + l.qty, 0), message: `${p.lines.length} item dari ${names.length} DN` });
   });
   const create = run("buat", async () => {
     if (!confirm(`Buat Stock Entry (draft)?\n${from} → ${to}`)) return;
-    const d = await call("se_create", { company, cost_center: costCenter, from_warehouse: from, to_warehouse: to, dns: names, tujuan });
+    const d = await call("se_create", { company, cost_center: costCenter, from_warehouse: from, to_warehouse: to, dns: names, tujuan, exclude: skip });
     setDone(d);
     setPreview(null);
     addLog({ ...meta, action: "buat", status: "ok", ref: d.name, url: d.url, items: d.lines.length, qty: d.lines.reduce((a, l) => a + l.qty, 0), message: `Draft dibuat · ${where}` });
@@ -184,31 +187,44 @@ export default function StockEntry() {
         )}
         <div className="actions">
           <button className="btn sec" disabled={!headOk || !selected.length || !!busy} onClick={load}>{busy === "cek" && <i className="spin" />}Ambil Item dari DN</button>
-          <button className="btn" disabled={!preview || !!busy} onClick={create}>{busy === "buat" && <i className="spin" />}Buat Stock Entry</button>
+          <button className="btn" disabled={!preview || !shown.length || !!busy} onClick={create}>{busy === "buat" && <i className="spin" />}Buat Stock Entry</button>
         </div>
         {err && <div className="alert err" role="alert">{err}</div>}
-        {done && <div className="alert ok">Stock Entry <a href={done.url} target="_blank" rel="noreferrer"><b>{done.name}</b></a> dibuat sebagai draft.</div>}
+        {done && <div className="alert ok">Stock Entry <a href={done.url} target="_blank" rel="noreferrer"><b>{done.name}</b></a> dibuat sebagai draft.{done.skipped?.length > 0 && <div>Item tidak dimasukkan: {done.skipped.join(", ")}</div>}{done.zero_valuation?.length > 0 && <div>Dibuat dengan valuation rate 0 (Allow Zero Valuation Rate): {done.zero_valuation.join(", ")}</div>}</div>}
       </div>
 
       {(preview || done) && (
         <>
           <div className="stats">
             <div className="stat"><span>DN dipakai</span><b>{selected.length || names.length}</b></div>
-            <div className="stat"><span>Jenis item</span><b>{(preview || done).lines.length}</b></div>
-            <div className="stat"><span>Total qty</span><b>{fmt((preview || done).lines.reduce((a, l) => a + l.qty, 0))}</b></div>
+            <div className="stat"><span>Jenis item</span><b>{shown.length}</b></div>
+            <div className="stat"><span>Total qty</span><b>{fmt(shown.reduce((a, l) => a + l.qty, 0))}</b></div>
           </div>
           <div className="card">
             <h2 className="card-title">Item hasil akumulasi <small>DN reference: <b>{(preview || done).reference}</b></small></h2>
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Item</th><th>Nama</th><th>UOM</th><th className="n">Qty</th>{preview && <th>Dari DN</th>}</tr></thead>
+                <thead><tr>{preview && <th>Ikut</th>}<th>Item</th><th>Nama</th><th>UOM</th><th className="n">Qty</th>{preview?.stock_checked && <><th className="n">Stok</th><th className="n">Valuation</th><th>Status</th></>}{preview && <th>Dari DN</th>}</tr></thead>
                 <tbody>
                   {(preview || done).lines.map((l, i) => (
-                    <tr key={i}>
+                    <tr key={i} style={preview && skip.includes(l.key) ? { opacity: 0.5 } : undefined}>
+                      {preview && <td><input type="checkbox" checked={!skip.includes(l.key)} onChange={(e) => setSkip((p) => (e.target.checked ? p.filter((k) => k !== l.key) : [...p, l.key]))} aria-label={`Ikutkan ${l.item_code}`} /></td>}
                       <td>{l.item_code}</td>
                       <td className="wrap">{l.item_name || "-"}</td>
                       <td>{l.uom}</td>
                       <td className="n"><b>{fmt(l.qty)}</b></td>
+                      {preview?.stock_checked && (
+                        <>
+                          <td className="n">{fmt(l.stock)}</td>
+                          <td className="n">{fmt(l.rate)}</td>
+                          <td>
+                            {l.no_stock && <span className="badge err">Stok 0</span>}
+                            {l.short && <span className="badge err">Stok kurang</span>}
+                            {l.zero_rate && <span className="badge info" style={{ marginLeft: 4 }}>Valuation 0</span>}
+                            {!l.no_stock && !l.short && !l.zero_rate && <span className="badge ok">OK</span>}
+                          </td>
+                        </>
+                      )}
                       {preview && <td className="wrap">{l.sources.map((s) => `${s.dn.split("-").pop()}: ${fmt(s.qty)}`).join(" · ")}</td>}
                     </tr>
                   ))}

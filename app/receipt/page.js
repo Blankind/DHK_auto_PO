@@ -189,6 +189,29 @@ export default function Receipt() {
 
       {preview && (
         <div className="card">
+          <h2 className="card-title">Hitungan sisa PO <small>Sisa bersih = Qty PO − sudah diterima (submit) − qty di draft Purchase Receipt</small></h2>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Item</th><th>Baris PO</th><th className="n">Qty PO</th><th className="n">Diterima</th><th className="n">Di draft PR</th><th className="n">Sisa bersih</th></tr></thead>
+              <tbody>
+                {poRows.map((r) => (
+                  <tr key={r.purchase_order_item} style={r.reserved ? { background: "var(--warn-bg)" } : undefined}>
+                    <td>{r.item_code}</td>
+                    <td>{r.material_request ? <span className="badge mr">{r.material_request}</span> : <span className="badge stock">Stock</span>}{r.item_inden ? ` · ${r.item_inden}` : ""}</td>
+                    <td className="n">{r.po_qty != null ? fmt(r.po_qty) : "-"}</td>
+                    <td className="n">{r.po_qty != null ? fmt(r.po_qty - r.pending) : "-"}</td>
+                    <td className="n">{r.reserved ? `${fmt(r.reserved)} (${r.reserved_docs.join(", ")})` : "-"}</td>
+                    <td className="n"><b>{fmt(r.remaining)}</b></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {preview && (
+        <div className="card">
           <h2 className="card-title">
             Alokasi Purchase Receipt <small>Ubah sumber atau qty sesuai kebutuhan {edited && <span className="badge info">diubah manual</span>}</small>
           </h2>
