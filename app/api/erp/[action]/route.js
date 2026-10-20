@@ -102,11 +102,11 @@ const handlers = {
       limit_page_length: 20,
     });
   },
-  async preview({ company, items }) {
+  async preview({ company, items, exclude }) {
     if (!company) throw new Error("Company wajib");
-    return allocate(cleanRows(items), company);
+    return allocate(cleanRows(items), company, exclude);
   },
-  async create({ supplier, company, items, naming_series, set_warehouse, cost_center, tc_name, terms_address, terms_extra }) {
+  async create({ supplier, company, items, exclude, naming_series, set_warehouse, cost_center, tc_name, terms_address, terms_extra }) {
     if (!supplier || !company) throw new Error("Supplier dan Company wajib");
     const rows = cleanRows(items);
     const desc = {};
@@ -114,7 +114,7 @@ const handlers = {
     const lock = await acquire();
     try {
       // hitung ulang: jangan pakai hasil preview lama
-      const { lines, summary } = await allocate(rows, company);
+      const { lines, summary } = await allocate(rows, company, exclude);
       const trx = today();
       const cfg = getSettings();
       const prices = await sellingPrices([...new Set(lines.map((l) => l.item_code))], trx, cfg.selling_price_list);

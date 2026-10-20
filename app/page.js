@@ -35,6 +35,7 @@ export default function PurchaseOrder() {
   const [rows, setRows] = useState([]);
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
+  const [excluded, setExcluded] = useState([]); // MR item yang dihapus user: { mri, mr, item_code, qty }
   const [done, setDone] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState("");
@@ -99,6 +100,7 @@ export default function PurchaseOrder() {
   async function onFile(f) {
     if (!f) return;
     setPreview(null);
+    setExcluded([]);
     setDone(null);
     setErr("");
     setFileName(f.name);
@@ -116,16 +118,36 @@ export default function PurchaseOrder() {
   }
 
   const ready = company && rows.length;
-  const check = run("cek", async () => {
-    const p = await call("preview", { company, items: rows });
+  const loadPreview = async (ex) => {
+    const p = await call("preview", { company, items: rows, exclude: ex.map((x) => x.mri) });
     setPreview(p);
-    addLog({ ...meta, action: "cek", status: "ok", message: `${p.lines.length} baris PO` });
+    return p;
+  };
+  const check = run("cek", async () => {
+    const p = await loadPreview(excluded);
+    addLog({ ...meta, action: "cek", status: "ok", message: `${p.lines.length} baris PO${excluded.length ? ` · ${excluded.length} MR dihapus` : ""}` });
   });
+  // hapus 1 MR item dari alokasi: qty dialokasi ulang ke MR berikutnya, kalau tidak ada lagi jadi stock
+  const dropMr = (l) =>
+    run("cek", async () => {
+      if (!confirm(`Hapus ${l.material_request} untuk ${l.item_code}?\nQty ${fmt(l.qty)} dialokasi ulang ke MR lain. Jika tidak ada MR lain, dibuat sebagai stock.`)) return;
+      const ex = [...excluded, { mri: l.material_request_item, mr: l.material_request, item_code: l.item_code, qty: l.qty }];
+      const p = await loadPreview(ex);
+      setExcluded(ex);
+      addLog({ ...meta, action: "cek", status: "ok", message: `Hapus ${l.material_request} (${l.item_code}) · ${p.lines.length} baris PO` });
+    })();
+  const restoreMr = (mri) =>
+    run("cek", async () => {
+      const ex = excluded.filter((x) => x.mri !== mri);
+      await loadPreview(ex);
+      setExcluded(ex);
+    })();
   const create = run("buat", async () => {
-    if (!confirm(`Buat Purchase Order (draft) untuk ${supplier}?`)) return;
-    const d = await call("create", { supplier, company, items: rows, naming_series: series, set_warehouse: warehouse, cost_center: costCenter, tc_name: tcName, terms_address: address, terms_extra: extra });
+    if (!confirm(`Buat Purchase Order (draft) untuk ${supplier}?${excluded.length ? `\n${excluded.length} MR dihapus dari alokasi.` : ""}`)) return;
+    const d = await call("create", { supplier, company, items: rows, exclude: excluded.map((x) => x.mri), naming_series: series, set_warehouse: warehouse, cost_center: costCenter, tc_name: tcName, terms_address: address, terms_extra: extra });
     setDone(d);
     setPreview(null);
+    setExcluded([]);
     addLog({ ...meta, action: "buat", status: "ok", ref: d.name, url: d.url, message: `Draft dibuat${warehouse ? ` · WH ${warehouse}` : ""}${costCenter ? ` · CC ${costCenter}` : ""}` });
   });
 
@@ -147,7 +169,7 @@ export default function PurchaseOrder() {
         <div className="grid">
           <div>
             <label htmlFor="co">Company</label>
-            <select id="co" value={company} onChange={(e) => setCompany(e.target.value)}>
+            <select id="co" value={company} onChange={(e) => { setCompany(e.target.value); setExcluded([]); setPreview(null); }}>
               {companies.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
@@ -283,9 +305,22 @@ export default function PurchaseOrder() {
       {lines && (
         <div className="card">
           <h2 className="card-title">Baris Purchase Order {preview && <small>Preview. Server menghitung ulang saat PO dibuat.</small>}</h2>
+          {preview && excluded.length > 0 && (
+            <div className="alert warn" style={{ marginTop: 0, marginBottom: 14 }}>
+              <b>MR dihapus dari alokasi:</b>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                {excluded.map((x) => (
+                  <span key={x.mri} className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    {x.mr} · {x.item_code} · {fmt(x.qty)}
+                    <button type="button" className="btn sec sm" style={{ height: 22, padding: "0 8px", fontSize: 12 }} disabled={!!busy} onClick={() => restoreMr(x.mri)}>Kembalikan</button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Item</th><th className="n">Qty</th><th className="n">Rate</th><th>Sumber</th>{hasInden && <th>Item Inden</th>}</tr></thead>
+              <thead><tr><th>Item</th><th className="n">Qty</th><th className="n">Rate</th><th>Sumber</th>{hasInden && <th>Item Inden</th>}{preview && <th>Aksi</th>}</tr></thead>
               <tbody>
                 {lines.map((l, i) => (
                   <tr key={i}>
@@ -294,6 +329,11 @@ export default function PurchaseOrder() {
                     <td className="n">{fmt(l.rate)}</td>
                     <td>{l.material_request ? <span className="badge mr">{l.material_request}</span> : <span className="badge stock">Stock</span>}</td>
                     {hasInden && <td>{l.item_inden || "-"}</td>}
+                    {preview && (
+                      <td>
+                        {l.material_request ? <button type="button" className="btn danger sm" disabled={!!busy} onClick={() => dropMr(l)}>Hapus</button> : "-"}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
