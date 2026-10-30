@@ -4,6 +4,7 @@ import { acquire, release } from "@/lib/lock";
 import { planReceipt, createReceipt } from "@/lib/receipt";
 import { searchDn, collect, createStockEntry, tujuanOptions } from "@/lib/stock";
 import { mutasiDraft } from "@/lib/mutasi";
+import { lcvHpp } from "@/lib/lcv";
 import { getSettings, withSettings } from "@/lib/settings";
 
 export const maxDuration = 60;
@@ -67,6 +68,9 @@ const handlers = {
   },
   async mutasi_check(b) {
     return mutasiDraft(b);
+  },
+  async lcv_check(b) {
+    return lcvHpp(b);
   },
   async tujuan_options() {
     return tujuanOptions();

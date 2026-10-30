@@ -15,3 +15,4 @@ Buka alamat Vercel → Pengaturan → isi API Key & Secret → Simpan & Tes Kone
 - `/settings` Pengaturan
 - `/stock` Stock Entry (Material Transfer dari Delivery Note, item diakumulasikan, DN reference otomatis)
 - `/mutasi` Cek Mutasi (rekap Stock Entry Material Transfer draft: total tonase per tujuan)
+- `/lcv` Cek LCV (matriks Unit HPP per item per tanggal dari Landed Cost Voucher submit; ekspor Excel; maks 92 hari; nilai tersembunyi sampai dicentang; menu aktif lewat Pengaturan)

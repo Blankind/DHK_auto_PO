@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { call, loadCfg, saveCfg, clearCfg } from "@/lib/client";
 
-const EMPTY = { api_key: "", api_secret: "", default_company: "", selling_price_list: "Grosir", selling_field: "price_list_rate_selling", pr_submit: false, se_dn_field: "custom_dn_reference", se_tujuan_field: "tujuan" };
+const EMPTY = { api_key: "", api_secret: "", default_company: "", selling_price_list: "Grosir", selling_field: "price_list_rate_selling", pr_submit: false, show_lcv: false, se_dn_field: "custom_dn_reference", se_tujuan_field: "tujuan" };
 
 export default function Settings() {
   const [f, setF] = useState(EMPTY);
@@ -107,6 +107,13 @@ export default function Settings() {
             <input type="checkbox" checked={f.pr_submit} onChange={set("pr_submit")} />
             Purchase Receipt langsung di-submit (jika tidak dicentang = draft)
           </label>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <label className="check">
+            <input type="checkbox" checked={!!f.show_lcv} onChange={set("show_lcv")} />
+            Tampilkan menu Cek LCV (data HPP, sensitif)
+          </label>
+          <p className="hint">Hanya menyembunyikan menu di browser ini. Pembatasan sebenarnya: atur izin baca Landed Cost Voucher pada user API di ERPNext.</p>
         </div>
         <div className="actions">
           <button className="btn sec" disabled={busy} onClick={run(saveOnly)}>Simpan preferensi</button>

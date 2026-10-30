@@ -91,3 +91,6 @@ td.wrap{white-space:normal;min-width:220px}
 .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#fff}
 .opt+.opt{margin-top:8px}
 .opt small{color:var(--mute);display:block}
+
+.matrix th:first-child,.matrix td:first-child{position:sticky;left:0;background:#fff;z-index:1;border-right:1px solid var(--line)}
+.matrix thead th:first-child{background:#f8f9fb}
